@@ -1,50 +1,55 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
+const mongoose = require('mongoose');
 const cors = require('cors');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const DATA_FILE = path.resolve(__dirname, 'leaderboard.json');
+// 1. Подключение к базе данных
+// Render сам подставит строку из настроек, которые мы укажем позже
+const MONGO_URI = process.env.MONGODB_URI;
 
-// ensure data file exists
-if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify([]), 'utf8');
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("Connected to MongoDB Atlas"))
+  .catch(err => console.error("Could not connect to MongoDB", err));
 
-function readData() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8') || '[]';
-    return JSON.parse(raw);
-  } catch (e) {
-    return [];
-  }
-}
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-}
-
-// POST /api/leaderboard
-// body: { name, score }
-app.post('/api/leaderboard', (req, res) => {
-  const { name, score } = req.body;
-  if (!name || typeof score !== 'number') return res.status(400).json({ error: 'Invalid payload' });
-  const entries = readData();
-  const entry = { name: String(name).slice(0, 50), score: Math.max(0, Math.floor(score)), date: new Date().toISOString() };
-  entries.push(entry);
-  // keep only last 1000 entries to avoid file growth
-  writeData(entries.slice(-1000));
-  return res.status(201).json({ ok: true, entry });
+// 2. Описание структуры данных (Схема)
+const scoreSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  score: { type: Number, required: true },
+  date: { type: Date, default: Date.now }
 });
 
-// GET /api/leaderboard?limit=10
-// returns an array sorted by score desc, truncated to limit
-app.get('/api/leaderboard', (req, res) => {
-  const limit = Math.min(100, parseInt(req.query.limit) || 10);
-  const entries = readData();
-  const sorted = entries.slice().sort((a,b) => b.score - a.score).slice(0, limit);
-  res.json(sorted);
+const Score = mongoose.model('Score', scoreSchema);
+
+// 3. Маршрут для отправки рекорда
+app.post('/api/leaderboard', async (req, res) => {
+  try {
+    const { name, score } = req.body;
+    if (!name || typeof score !== 'number') return res.status(400).json({ error: 'Invalid data' });
+
+    // Сохраняем в облако
+    const newEntry = new Score({ name: name.slice(0, 20), score: Math.floor(score) });
+    await newEntry.save();
+
+    res.status(201).json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 4. Маршрут для получения ТОП-10
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const limit = Math.min(100, parseInt(req.query.limit) || 10);
+    // Ищем записи, сортируем по убыванию счета, берем только ТОП
+    const scores = await Score.find().sort({ score: -1 }).limit(limit);
+    res.json(scores);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Leaderboard API listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`API running on port ${PORT}`));
