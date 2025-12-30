@@ -167,8 +167,8 @@
     </div>
 
 <script>
-    // CONFIG: set to your deployed API. Default points to localhost:3000
-    const LEADERBOARD_API = 'https://neon-blocks-api.onrender.com/api/leaderboard';
+    // CONFIG: set to your deployed API.
+    const LEADERBOARD_API = 'https://neon-blocks.onrender.com/api/leaderboard';
     const LEADERBOARD_PAGE_LIMIT = 10;
 
     const canvas = document.getElementById('gameCanvas');
@@ -321,7 +321,7 @@
             const tw = draggingPiece.shape[0].length * CELL_SIZE, th = draggingPiece.shape.length * CELL_SIZE;
             const gx = Math.round((mousePos.x - tw/2) / CELL_SIZE), gy = Math.round((mousePos.y - th/2) / CELL_SIZE);
             if (canPlace(draggingPiece.shape, gy, gx)) {
-                draggingPiece.shape.forEach((row, r) => row.forEach((v, c) => { if (v) drawBlock((gx+c)*CELL_SIZE, (gy+r)*CELL_SIZE, draggingPiece.color, 1, 0.25); }));
+                draggingPiece.shape.forEach((row, r) => row.forEach((val, c) => { if (val) drawBlock((gx+c)*CELL_SIZE, (gy+r)*CELL_SIZE, draggingPiece.color, 1, 0.25); }));
             }
             drawPiece(draggingPiece, mousePos.x, mousePos.y, 1);
         }
@@ -476,9 +476,6 @@
             alert('Failed to submit score. Make sure leaderboard server is running and accessible.');
         }
     }
-
-    // when game over overlay open -> automatically fill name & show submit flow if called with openLeaderboard(true)
-    // If user presses the SUBMIT / LEADERBOARD button from game-over, we open overlay; user must press Submit there.
 
     window.onload = () => { 
         if (!username) document.getElementById('welcome-msg').innerText = "WELCOME!";
