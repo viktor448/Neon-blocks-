@@ -1,13 +1,13 @@
 {
   "name": "neon-blocks-leaderboard",
-  "version": "1.0.0",
-  "description": "Simple leaderboard server for Neon Blocks",
+  "version": "1.1.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "mongoose": "^7.0.0"
   }
 }
