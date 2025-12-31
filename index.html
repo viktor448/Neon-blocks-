@@ -54,7 +54,6 @@
             height: auto; box-shadow: 0 0 40px rgba(0,0,0,0.7);
         }
 
-        /* ЦЕНТРИРОВАНИЕ PERFECT SCORE */
         #perfect-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
@@ -82,7 +81,6 @@
         #track-display { position: absolute; top: 70px; font-size: 0.8rem; color: var(--primary-color); font-weight: bold; opacity: 0; transition: 0.5s; z-index: 20; }
         #beat-fx { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border: 0px solid var(--primary-color); box-sizing: border-box; transition: 0.1s; z-index: 5; }
 
-        /* Leaderboard styles */
         #leaderboard-overlay .panel {
             background: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.6));
             padding: 20px; border-radius: 12px; border: 2px solid rgba(0,255,204,0.15); width: 90%;
@@ -121,14 +119,12 @@
 
         <canvas id="gameCanvas"></canvas>
 
-        <!-- Ввод имени (только локально) -->
         <div id="login-menu" class="overlay hidden">
             <h1>YOUR NAME</h1>
             <input type="text" id="name-input" placeholder="PLAYER" maxlength="10" style="background:transparent; border:2px solid var(--primary-color); color:white; padding:12px; font-size:1.4rem; text-align:center; margin-bottom:12px;" />
             <button class="menu-btn" onclick="saveName()">START</button>
         </div>
 
-        <!-- Главное меню -->
         <div id="main-menu" class="overlay">
             <h1 style="font-style:italic">NEON BLOCKS</h1>
             <p id="welcome-msg" style="color: #666; margin-bottom: 20px;"></p>
@@ -138,7 +134,6 @@
             </div>
         </div>
 
-        <!-- Конец игры -->
         <div id="game-over" class="overlay hidden">
             <h1 style="color: var(--secondary-color);">OVER!</h1>
             <p id="final-score-text" style="font-size: 1.5rem; color: #fff; margin-bottom: 10px;">0</p>
@@ -148,17 +143,14 @@
             </div>
         </div>
 
-        <!-- Leaderboard overlay -->
         <div id="leaderboard-overlay" class="overlay hidden">
             <div class="panel">
                 <h2 style="margin:0 0 8px 0; color:var(--primary-color)">TOP PLAYERS</h2>
-                <div id="leaderboard-list" aria-live="polite"></div>
-
+                <div id="leaderboard-list"></div>
                 <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
                     <input id="lb-name" placeholder="NAME" maxlength="10" style="flex:1; background:transparent; border:1px solid rgba(255,255,255,0.06); padding:8px; color:white;" />
                     <button class="small-btn" id="lb-submit-btn">Submit</button>
                 </div>
-
                 <div style="display:flex; justify-content:space-between; margin-top:12px;">
                     <button class="small-btn" onclick="refreshLeaderboard()">Refresh</button>
                     <button class="small-btn" onclick="closeLeaderboard()">Close</button>
@@ -168,7 +160,6 @@
     </div>
 
 <script>
-    // CONFIG: set to your deployed API.
     const LEADERBOARD_API = 'https://neon-blocks.onrender.com/api/leaderboard';
     const LEADERBOARD_PAGE_LIMIT = 10;
 
@@ -185,11 +176,11 @@
     let highScore = parseInt(localStorage.getItem('neonBlocks_best')) || 0;
     highScoreEl.innerText = highScore;
 
-    // --- MISC: playlist & audio ---
     const playlist = Array.from({length: 10}, (_, i) => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${i+1}.mp3`);
     let currentTrack = 0;
     const bgMusic = new Audio();
     bgMusic.volume = 0.25;
+
     function playTrack(idx) {
         currentTrack = idx % playlist.length;
         bgMusic.src = playlist[currentTrack];
@@ -201,7 +192,6 @@
     bgMusic.onended = () => playTrack(currentTrack + 1);
     function nextTrack() { playTrack(currentTrack + 1); }
 
-    // --- audio sfx ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSfx(freq, type, duration, vol = 0.1) {
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -218,13 +208,11 @@
         const msg = document.getElementById('perfect-score-msg');
         msg.classList.add('active');
         setTimeout(() => msg.classList.remove('active'), 2500);
-        // BRAAM EFFECT
         playSfx(40, 'sawtooth', 1.5, 0.5);
         playSfx(43, 'sawtooth', 1.5, 0.4);
         playSfx(100, 'sine', 1.5, 0.3);
     }
 
-    // --- MENU LOGIC ---
     function saveName() {
         const val = document.getElementById('name-input').value.trim();
         if (val.length >= 2) {
@@ -258,7 +246,6 @@
 
     function restartGame() { startGame(); }
 
-    // --- GAMEPLAY ---
     const COLORS = ['#00ffcc', '#ff0066', '#ffff00', '#0077ff', '#ff8800', '#cc00ff'];
     const SHAPES = [[[1]], [[1,1]], [[1],[1]], [[1,1,1]], [[1,1],[1,1]], [[1,1,1],[0,1,0]], [[1,1,1,1]], [[1,1,1],[1,0,0]]];
     let grid = [], hand = [], draggingPiece = null, mousePos = {x:0, y:0}, score = 0, isGameRunning = false, particles = [];
@@ -281,7 +268,6 @@
         ctx.save(); ctx.globalAlpha = alpha;
         const s = CELL_SIZE * scale, o = (CELL_SIZE - s) / 2;
         ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.fillStyle = color;
-        // rounded rect polyfill
         const radius = 5 * scale;
         ctx.beginPath();
         ctx.moveTo(x+o+radius+1, y+o+1);
@@ -290,8 +276,7 @@
         ctx.arcTo(x+o+1, y+o+s-1, x+o+1, y+o+1, radius);
         ctx.arcTo(x+o+1, y+o+1, x+o+s-1, y+o+1, radius);
         ctx.closePath();
-        ctx.fill();
-        ctx.restore();
+        ctx.fill(); ctx.restore();
     }
 
     function drawPiece(p, cx, cy, sc, al = 1) {
@@ -304,20 +289,16 @@
     function render() {
         if (!isGameRunning) return;
         ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
         ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, BOARD_SIZE, BOARD_SIZE, HAND_HEIGHT);
         ctx.strokeStyle = '#00ffcc66'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, BOARD_SIZE); ctx.lineTo(BOARD_SIZE, BOARD_SIZE); ctx.stroke();
-
         ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
         for (let i = 0; i <= GRID_SIZE; i++) {
             ctx.beginPath(); ctx.moveTo(i*CELL_SIZE, 0); ctx.lineTo(i*CELL_SIZE, BOARD_SIZE); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, i*CELL_SIZE); ctx.lineTo(BOARD_SIZE, i*CELL_SIZE); ctx.stroke();
         }
-
         for (let r=0; r<GRID_SIZE; r++) for (let c=0; c<GRID_SIZE; c++) if (grid[r][c]) drawBlock(c*CELL_SIZE, r*CELL_SIZE, grid[r][c]);
         hand.forEach(p => { if (p !== draggingPiece) drawPiece(p, p.x, p.y, p.scale); });
-
         if (draggingPiece) {
             const tw = draggingPiece.shape[0].length * CELL_SIZE, th = draggingPiece.shape.length * CELL_SIZE;
             const gx = Math.round((mousePos.x - tw/2) / CELL_SIZE), gy = Math.round((mousePos.y - th/2) / CELL_SIZE);
@@ -356,13 +337,7 @@
     function createExplosion(x,y,c) { 
         for(let i=0;i<8;i++) {
             const p = {
-                x: x + CELL_SIZE/2 + (Math.random()-0.5)*20,
-                y: y + CELL_SIZE/2 + (Math.random()-0.5)*20,
-                c: c,
-                alpha: 1,
-                vx: (Math.random()-0.5)*6,
-                vy: (Math.random()-0.5)*6,
-                size: 6 + Math.random()*6,
+                x: x + CELL_SIZE/2 + (Math.random()-0.5)*20, y: y + CELL_SIZE/2 + (Math.random()-0.5)*20, c: c, alpha: 1, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, size: 6 + Math.random()*6,
                 update() { this.x += this.vx; this.y += this.vy; this.alpha -= 0.02; this.size *= 0.98; },
                 draw() { ctx.save(); ctx.globalAlpha = Math.max(0, this.alpha); ctx.fillStyle = this.c; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
             };
@@ -387,101 +362,76 @@
 
     canvas.addEventListener('pointerup', e => {
         if (draggingPiece) {
-            const tw = draggingPiece.shape[0].length*CELL_SIZE, th = draggingPiece.shape.length*CELL_SIZE;
+            const tw = draggingPiece.shape[0].length * CELL_SIZE, th = draggingPiece.shape.length * CELL_SIZE;
             const gx = Math.round((mousePos.x - tw/2) / CELL_SIZE), gy = Math.round((mousePos.y - th/2) / CELL_SIZE);
             if (canPlace(draggingPiece.shape, gy, gx)) {
                 playSfx(200, 'square', 0.1, 0.1);
                 draggingPiece.shape.forEach((row, r) => row.forEach((v, c) => { if (v) grid[gy+r][gx+c] = draggingPiece.color; }));
                 hand = hand.filter(p => p !== draggingPiece); checkLines(); refillHand();
-                // check if any moves left
                 const anyMove = hand.some(p => { 
                     for(let r=0; r<=GRID_SIZE-p.shape.length; r++) 
                         for(let c=0; c<=GRID_SIZE-p.shape[0].length; c++) 
                             if(canPlace(p.shape,r,c)) return true; 
                     return false; 
                 });
-                if (!anyMove) {
-                    isGameRunning = false; document.getElementById('final-score-text').innerText = "SCORE: " + score; document.getElementById('game-over').classList.remove('hidden');
-                }
+                if (!anyMove) { isGameRunning = false; document.getElementById('final-score-text').innerText = "SCORE: " + score; document.getElementById('game-over').classList.remove('hidden'); }
             }
             draggingPiece = null;
         }
     });
 
-    // --- Leaderboard functions (front-end) ---
     function openLeaderboard(openFromGameOver = false) {
         document.getElementById('leaderboard-overlay').classList.remove('hidden');
-        document.getElementById('leaderboard-overlay').scrollTop = 0;
         const nameInput = document.getElementById('lb-name');
         if (username) nameInput.value = username;
-        else if (openFromGameOver) {
-            // prefill with any previous or empty
-            nameInput.value = localStorage.getItem('neonBlocks_user') || '';
-            document.getElementById('lb-submit-btn').innerText = 'Submit';
-        }
         refreshLeaderboard();
     }
-
-    function closeLeaderboard() {
-        document.getElementById('leaderboard-overlay').classList.add('hidden');
-    }
+    function closeLeaderboard() { document.getElementById('leaderboard-overlay').classList.add('hidden'); }
 
     async function refreshLeaderboard() {
         const list = document.getElementById('leaderboard-list');
         list.innerHTML = '<div style="color:#888; text-align:center; padding:12px">Loading...</div>';
         try {
-            const res = await fetch(LEADERBOARD_API + '?limit=' + LEADERBOARD_PAGE_LIMIT, { method: 'GET' });
-            if (!res.ok) throw new Error('Failed to load leaderboard');
+            const res = await fetch(LEADERBOARD_API + '?limit=' + LEADERBOARD_PAGE_LIMIT);
             const json = await res.json();
-            // json expected to be array of { name, score, date }
-            if (!Array.isArray(json)) throw new Error('Bad data');
             list.innerHTML = '';
-            if (json.length === 0) list.innerHTML = '<div style="color:#888; text-align:center; padding:12px">No scores yet</div>';
             json.forEach((it, idx) => {
                 const div = document.createElement('div');
                 div.className = 'leader-item';
-                div.innerHTML = `<div style="display:flex;align-items:center"><div class="leader-rank">${idx+1}</div><div class="leader-name">${escapeHtml(it.name)}</div></div><div class="leader-score">${it.score}</div>`;
+                div.innerHTML = `<div style="display:flex;align-items:center"><div class="leader-rank">${idx+1}</div><div class="leader-name">${it.name}</div></div><div class="leader-score">${it.score}</div>`;
                 list.appendChild(div);
             });
-        } catch (err) {
-            list.innerHTML = `<div style="color:#f55; text-align:center; padding:12px">Error loading leaderboard</div>`;
-            console.error(err);
-        }
+        } catch (err) { list.innerHTML = `<div style="color:#f55; text-align:center; padding:12px">Error</div>`; }
     }
-
-    function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];}); }
 
     async function submitScoreFromOverlay() {
         const nameInput = document.getElementById('lb-name');
         const nm = nameInput.value.trim().slice(0, 20) || 'PLAYER';
-        localStorage.setItem('neonBlocks_user', nm);
-        username = nm;
+        localStorage.setItem('neonBlocks_user', nm); username = nm;
         await submitScore({ name: nm, score });
         refreshLeaderboard();
     }
-
     document.getElementById('lb-submit-btn').addEventListener('click', submitScoreFromOverlay);
 
     async function submitScore(payload) {
-        // payload: { name, score }
         try {
-            const res = await fetch(LEADERBOARD_API, {
+            await fetch(LEADERBOARD_API, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (!res.ok) throw new Error('Submit failed');
-            return await res.json();
-        } catch (err) {
-            console.error('Submit failed', err);
-            alert('Failed to submit score. Make sure leaderboard server is running and accessible.');
-        }
+        } catch (err) {}
     }
 
     window.onload = () => { 
         if (!username) document.getElementById('welcome-msg').innerText = "WELCOME!";
         else showMenu();
     };
+
+    // РЕГИСТРАЦИЯ SERVICE WORKER
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
 </script>
 </body>
 </html>
