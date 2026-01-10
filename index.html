@@ -54,6 +54,7 @@
             height: auto; box-shadow: 0 0 40px rgba(0,0,0,0.7);
         }
 
+        /* ИДЕАЛЬНОЕ ЦЕНТРИРОВАНИЕ PERFECT SCORE */
         #perfect-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
@@ -76,11 +77,12 @@
         .hidden { display: none !important; }
 
         h1 { font-size: 2.8rem; color: var(--primary-color); text-shadow: 0 0 20px var(--primary-color); margin-bottom: 20px; }
-        .menu-btn { padding: 15px 40px; font-size: 1.2rem; background: transparent; color: white; border: 2px solid var(--primary-color); border-radius: 50px; text-transform: uppercase; font-weight: 900; cursor: pointer; }
+        .menu-btn { padding: 15px 40px; font-size: 1.2rem; background: transparent; color: white; border: 2px solid var(--primary-color); border-radius: 50px; text-transform: uppercase; font-weight: 900; margin: 10px; cursor: pointer; min-width: 200px; }
 
         #track-display { position: absolute; top: 70px; font-size: 0.8rem; color: var(--primary-color); font-weight: bold; opacity: 0; transition: 0.5s; z-index: 20; }
         #beat-fx { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border: 0px solid var(--primary-color); box-sizing: border-box; transition: 0.1s; z-index: 5; }
 
+        /* Leaderboard styles */
         #leaderboard-overlay .panel {
             background: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.6));
             padding: 20px; border-radius: 12px; border: 2px solid rgba(0,255,204,0.15); width: 90%;
@@ -99,7 +101,7 @@
 
     <div id="game-container">
         <div id="beat-fx"></div>
-        <div id="track-display">TRACK 1/10</div>
+        <div id="track-display">TRACK 1/11</div>
         
         <div id="perfect-layer">
             <div id="perfect-score-msg">PERFECT!</div>
@@ -176,16 +178,39 @@
     let highScore = parseInt(localStorage.getItem('neonBlocks_best')) || 0;
     highScoreEl.innerText = highScore;
 
-    const playlist = Array.from({length: 10}, (_, i) => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${i+1}.mp3`);
+    // --- ПЛЕЙЛИСТ (11 ТРЕКОВ) ---
+    const playlist = [
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
+        './nena.mp3' // Песня должна лежать в той же папке на GitHub
+    ];
+
     let currentTrack = 0;
     const bgMusic = new Audio();
     bgMusic.volume = 0.25;
 
+    // Если трек не загрузился, переключаем на следующий автоматически
+    bgMusic.onerror = () => {
+        console.warn("Track failed to load, skipping...");
+        nextTrack();
+    };
+
     function playTrack(idx) {
         currentTrack = idx % playlist.length;
         bgMusic.src = playlist[currentTrack];
-        bgMusic.play().catch(() => {});
-        trackDisplay.innerText = `TRACK ${currentTrack + 1}/10`;
+        bgMusic.load(); // Принудительная загрузка
+        bgMusic.play().catch(() => {
+            console.log("Music waiting for interaction...");
+        });
+        trackDisplay.innerText = `TRACK ${currentTrack + 1}/${playlist.length}`;
         trackDisplay.style.opacity = 1;
         setTimeout(() => trackDisplay.style.opacity = 0, 2000);
     }
@@ -398,7 +423,7 @@
             json.forEach((it, idx) => {
                 const div = document.createElement('div');
                 div.className = 'leader-item';
-                div.innerHTML = `<div style="display:flex;align-items:center"><div class="leader-rank">${idx+1}</div><div class="leader-name">${it.name}</div></div><div class="leader-score">${it.score}</div>`;
+                div.innerHTML = `<div style="display:flex;align-items:center"><div class="leader-rank">${idx+1}</div><div class="leader-name">${escapeHtml(it.name)}</div></div><div class="leader-score">${it.score}</div>`;
                 list.appendChild(div);
             });
         } catch (err) { list.innerHTML = `<div style="color:#f55; text-align:center; padding:12px">Error</div>`; }
@@ -428,7 +453,6 @@
         else showMenu();
     };
 
-    // РЕГИСТРАЦИЯ SERVICE WORKER
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js');
     }
